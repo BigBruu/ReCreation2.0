@@ -1,53 +1,124 @@
 import React from 'react';
 
-const Observatory = ({ centerPosition, onPositionChange, view, onFieldClick, userFleets = [], userPlanets = [], onNavigateToSpaceport }) => {
+const PLANET_COLORS = {
+  green: { core: '#22c55e', edge: '#14532d', label: '#86efac' },
+  blue: { core: '#3b82f6', edge: '#1e3a8a', label: '#93c5fd' },
+  brown: { core: '#d97706', edge: '#78350f', label: '#fcd34d' },
+  orange: { core: '#fb923c', edge: '#7c2d12', label: '#fdba74' },
+};
+
+const PlanetSprite = ({ type, size = 38 }) => {
+  const c = PLANET_COLORS[type] || PLANET_COLORS.green;
+  const r = size / 2;
+  const isRinged = type === 'orange';
+  return (
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="planet-sprite">
+      <defs>
+        <radialGradient id={`grad-${type}`} cx="35%" cy="30%" r="70%">
+          <stop offset="0%" stopColor={c.core} stopOpacity="1" />
+          <stop offset="60%" stopColor={c.core} stopOpacity="0.95" />
+          <stop offset="100%" stopColor={c.edge} stopOpacity="1" />
+        </radialGradient>
+        <radialGradient id={`glow-${type}`} cx="50%" cy="50%" r="50%">
+          <stop offset="60%" stopColor={c.core} stopOpacity="0.25" />
+          <stop offset="100%" stopColor={c.core} stopOpacity="0" />
+        </radialGradient>
+      </defs>
+      <circle cx={r} cy={r} r={r} fill={`url(#glow-${type})`} />
+      {isRinged && (
+        <ellipse
+          cx={r}
+          cy={r}
+          rx={r * 0.95}
+          ry={r * 0.25}
+          fill="none"
+          stroke={c.label}
+          strokeWidth="1.5"
+          opacity="0.85"
+          transform={`rotate(-18 ${r} ${r})`}
+        />
+      )}
+      <circle cx={r} cy={r} r={r * 0.62} fill={`url(#grad-${type})`} />
+      {isRinged && (
+        <ellipse
+          cx={r}
+          cy={r}
+          rx={r * 0.95}
+          ry={r * 0.25}
+          fill="none"
+          stroke={c.label}
+          strokeWidth="1.5"
+          opacity="0.85"
+          strokeDasharray="22 100"
+          strokeDashoffset="-46"
+          transform={`rotate(-18 ${r} ${r})`}
+        />
+      )}
+    </svg>
+  );
+};
+
+const Observatory = ({
+  centerPosition,
+  onPositionChange,
+  view,
+  onFieldClick,
+  userFleets = [],
+  userPlanets = [],
+  onNavigateToSpaceport,
+  currentUsername,
+}) => {
   const renderField = (x, y) => {
     const key = `${x},${y}`;
     const fieldData = view[key] || { planet: null, fleets: [] };
     const { planet, fleets } = fieldData;
 
-    let planetIcon = null;
-    if (planet) {
-      const planetClass = `planet-${planet.planet_type}`;
-      const isOwned = planet.owner_username;
-      
-      const dominantResource = Math.max(
-        planet.resources.food,
-        planet.resources.metal, 
-        planet.resources.hydrogen
-      );
-      
-      planetIcon = (
-        <div className={`planet ${planetClass} ${isOwned ? 'owned' : ''}`}>
-          <div className="planet-name">{planet.name}</div>
-          {isOwned && <div className="planet-owner">{planet.owner_username}</div>}
-          <div className="planet-stats">
-            <div className="planet-resources">{dominantResource.toLocaleString()}</div>
-          </div>
-        </div>
-      );
-    }
-
-    const hasFleets = fleets.length > 0;
     const centerX = Math.floor(centerPosition.x);
     const centerY = Math.floor(centerPosition.y);
     const isCenter = x === centerX && y === centerY;
 
+    let ownership = 'neutral';
+    if (planet && planet.owner_username) {
+      ownership = planet.owner_username === currentUsername ? 'own' : 'enemy';
+    }
+
+    const dominantResource = planet
+      ? Math.max(planet.resources.food, planet.resources.metal, planet.resources.hydrogen)
+      : 0;
+
+    const labelColorClass =
+      ownership === 'own' ? 'label-own' : ownership === 'enemy' ? 'label-enemy' : 'label-neutral';
+
     return (
       <div
         key={key}
-        className={`observatory-field ${planet ? 'has-planet' : 'empty'} ${hasFleets ? 'has-fleets' : ''} ${isCenter ? 'center-field' : ''}`}
+        className={`obs-cell ${planet ? 'has-planet' : 'empty'} ${isCenter ? 'center-cell' : ''}`}
         onClick={() => onFieldClick(x, y, fieldData)}
-        title={`(${x}:${y}) ${planet ? planet.name : 'Leerer Raum'} ${hasFleets ? `- ${fleets.length} Flotte(n)` : ''} ${isCenter ? ' [ZENTRUM]' : ''}`}
+        title={`(${x}:${y}) ${planet ? planet.name : 'Leerer Raum'}${
+          fleets.length ? ` - ${fleets.length} Flotte(n)` : ''
+        }`}
       >
-        <div className="field-coordinates">{x}:{y}</div>
-        {planetIcon}
-        {hasFleets && (
-          <div className="fleet-indicator">
-            {fleets.map((fleet, i) => (
-              <div key={i} className="fleet-icon" title={`${fleet.name}${fleet.movement_end_time ? ' (bewegend)' : ''}`}>
-                {fleet.name}{fleet.movement_end_time ? '*' : ''}
-              </div>
+        <div className="obs-coord">{x}:{y}</div>
+
+        {planet && (
+          <div className={`obs-planet-wrap owner-${ownership}`}>
+            <div className={`obs-label obs-label-top ${labelColorClass}`}>
+              {planet.owner_username || planet.name}
+            </div>
+            <PlanetSprite type={planet.planet_type} />
+            <div className={`obs-label obs-label-bottom ${labelColorClass}`}>
+              {dominantResource.toLocaleString('de-DE')}
+            </div>
+          </div>
+        )}
+
+        {fleets.length > 0 && (
+          <div className="obs-fleets">
+            {fleets.slice(0, 3).map((fleet, i) => (
+              <span key={i} className="obs-fleet-tag" title={fleet.name}>
+                F.{i + 1}
+                {fleet.movement_end_time ? '*' : ''}
+              </span>
             ))}
           </div>
         )}
@@ -62,10 +133,10 @@ const Observatory = ({ centerPosition, onPositionChange, view, onFieldClick, use
         <div className="observatory-controls">
           <div className="fleet-selector">
             <label>Zu Flotte springen:</label>
-            <select 
+            <select
               onChange={(e) => {
                 if (e.target.value) {
-                  const fleet = userFleets.find(f => f.id === e.target.value);
+                  const fleet = userFleets.find((f) => f.id === e.target.value);
                   if (fleet) {
                     onPositionChange({ x: fleet.position.x, y: fleet.position.y });
                   }
@@ -75,20 +146,19 @@ const Observatory = ({ centerPosition, onPositionChange, view, onFieldClick, use
               className="fleet-select"
             >
               <option value="">Flotte wählen...</option>
-              {userFleets.map(fleet => (
+              {userFleets.map((fleet) => (
                 <option key={fleet.id} value={fleet.id}>
-                  {fleet.name} ({fleet.position.x}:{fleet.position.y}){fleet.movement_end_time ? '*' : ''}
+                  {fleet.name} ({fleet.position.x}:{fleet.position.y})
+                  {fleet.movement_end_time ? '*' : ''}
                 </option>
               ))}
             </select>
-            <button 
+            <button
               onClick={() => {
                 if (userPlanets.length > 0) {
-                  const spaceport = userPlanets[0];
-                  onPositionChange({ x: spaceport.position.x, y: spaceport.position.y });
-                  if (onNavigateToSpaceport) {
-                    onNavigateToSpaceport();
-                  }
+                  const sp = userPlanets[0];
+                  onPositionChange({ x: sp.position.x, y: sp.position.y });
+                  if (onNavigateToSpaceport) onNavigateToSpaceport();
                 }
               }}
               className="btn-secondary spaceport-btn"
@@ -101,50 +171,54 @@ const Observatory = ({ centerPosition, onPositionChange, view, onFieldClick, use
           </div>
         </div>
       </div>
-      
-      <div className="observatory-grid">
-        {/* Column headers (X-axis) */}
-        <div className="observatory-row">
-          <div className="axis-label"></div>
-          {Array.from({ length: 7 }, (_, col) => {
-            const x = centerPosition.x - 3 + col;
-            return <div key={col} className="col-label">{x}</div>;
+
+      <div className="obs-starfield">
+        <div className="obs-grid">
+          <div className="obs-row obs-header-row">
+            <div className="obs-axis-corner"></div>
+            {Array.from({ length: 7 }, (_, col) => {
+              const x = centerPosition.x - 3 + col;
+              return (
+                <div key={col} className="obs-col-label">
+                  {x}
+                </div>
+              );
+            })}
+          </div>
+
+          {Array.from({ length: 7 }, (_, row) => {
+            const y = centerPosition.y - 3 + row;
+            return (
+              <div key={row} className="obs-row">
+                <div className="obs-row-label">{y}</div>
+                {Array.from({ length: 7 }, (_, col) => {
+                  const x = centerPosition.x - 3 + col;
+                  if (x >= 0 && x < 47 && y >= 0 && y < 47) {
+                    return renderField(x, y);
+                  }
+                  return <div key={col} className="obs-cell empty" />;
+                })}
+              </div>
+            );
           })}
         </div>
-        
-        {/* Grid with Y-axis labels */}
-        {Array.from({ length: 7 }, (_, row) => {
-          const y = centerPosition.y - 3 + row;
-          return (
-            <div key={row} className="observatory-row">
-              <div className="row-label">{y}</div>
-              {Array.from({ length: 7 }, (_, col) => {
-                const x = centerPosition.x - 3 + col;
-                if (x >= 0 && x < 47 && y >= 0 && y < 47) {
-                  return renderField(x, y);
-                }
-                return <div key={col} className="observatory-field empty"></div>;
-              })}
-            </div>
-          );
-        })}
       </div>
-      
+
       <div className="observatory-legend">
         <div className="legend-item">
-          <div className="planet planet-green"></div>
+          <PlanetSprite type="green" size={16} />
           <span>Nahrung</span>
         </div>
         <div className="legend-item">
-          <div className="planet planet-blue"></div>
+          <PlanetSprite type="blue" size={16} />
           <span>Wasserstoff</span>
         </div>
         <div className="legend-item">
-          <div className="planet planet-brown"></div>
+          <PlanetSprite type="brown" size={16} />
           <span>Metall</span>
         </div>
         <div className="legend-item">
-          <div className="planet planet-orange"></div>
+          <PlanetSprite type="orange" size={16} />
           <span>Wasserstoff</span>
         </div>
       </div>

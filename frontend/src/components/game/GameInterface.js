@@ -139,6 +139,7 @@ const GameInterface = () => {
               userFleets={game.userFleets}
               userPlanets={game.userPlanets}
               onNavigateToSpaceport={() => setActiveTab('raumhafen')}
+              currentUsername={user?.username}
             />
           )}
 
