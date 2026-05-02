@@ -97,3 +97,13 @@ android-sdk/ -e
 # Environment files
 *.env
 *.env.*
+
+# MongoDB runtime data — never commit
+data/
+/data/mongodb/
+*.wt
+*.wt.lock
+WiredTiger*
+mongod.log
+journal/
+diagnostic.data/

@@ -5,13 +5,13 @@ pkill -f "uvicorn server:app" 2>/dev/null || true
 pkill -f "craco start" 2>/dev/null || true
 pkill -f "react-scripts start" 2>/dev/null || true
 
-MONGO_DATA_DIR="/home/runner/workspace/data/mongodb"
-mkdir -p "$MONGO_DATA_DIR"
+MONGO_DBPATH="${MONGO_DBPATH:-$HOME/.local/share/mongodb-data}"
+mkdir -p "$MONGO_DBPATH"
 if pgrep -x mongod >/dev/null; then
   echo "MongoDB already running"
 else
-  mongod --dbpath "$MONGO_DATA_DIR" --port 27017 --bind_ip 127.0.0.1 --logpath /tmp/mongodb.log --fork
-  echo "MongoDB started (persistent data: $MONGO_DATA_DIR)"
+  mongod --dbpath "$MONGO_DBPATH" --port 27017 --bind_ip 127.0.0.1 --logpath /tmp/mongodb.log --fork
+  echo "MongoDB started (persistent data: $MONGO_DBPATH)"
 fi
 
 cd /home/runner/workspace/backend
