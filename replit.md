@@ -298,7 +298,7 @@ Secrets are managed via Replit Secrets (`environment-secrets` skill). Never log 
 ## 7. Startup (`start.sh`)
 
 1. Stops stale `uvicorn` / `react-scripts` / `node` dev processes from previous runs.
-2. Starts MongoDB on `127.0.0.1:27017` if not already running. Data path is `${MONGO_DBPATH:-$HOME/.local/share/mongodb-data}` — **outside** the project so runtime state never gets committed (the previous in-repo `data/mongodb/` was removed; `data/`, `*.wt`, `WiredTiger*`, `journal/` are now in `.gitignore`).
+2. Starts MongoDB on `127.0.0.1:27017` if not already running, persistent data in `data/mongodb`.
 3. Starts FastAPI via `uv run` on `127.0.0.1:8000`.
 4. Starts React via `yarn start` on `0.0.0.0:5000` with `CI=true` (avoids interactive port prompts).
 
