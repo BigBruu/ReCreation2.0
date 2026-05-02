@@ -14,8 +14,6 @@ const SIDEBAR_TABS = [
   { id: 'einrichtungen', label: 'Einrichtungen' },
   { id: 'technologie', label: 'Technologie' },
   { id: 'werft', label: 'Werft' },
-  { id: 'handelszentrum', label: 'Handelszentrum' },
-  { id: 'allianzen', label: 'Allianzen' },
 ];
 
 const GameInterface = () => {
@@ -124,16 +122,6 @@ const GameInterface = () => {
                 {tab.label}
               </button>
             ))}
-          </div>
-
-          <div className="sidebar-secondary">
-            <button className="sidebar-link">Startseite</button>
-            <button className="sidebar-link">Forum</button>
-            <button className="sidebar-link">Rangliste</button>
-            <button className="sidebar-link">Hall of Fame</button>
-            <button className="sidebar-link">Statistiken</button>
-            <button className="sidebar-link">Release Info</button>
-            <button className="sidebar-link">Hilfe</button>
           </div>
 
           <div className="sidebar-actions">
