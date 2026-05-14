@@ -160,9 +160,9 @@ const AdminPanel = () => {
         </div>
       </div>
 
-      <div className="flex">
-        <div className="w-64 bg-gray-900 border-r-2 border-red-500 h-screen p-4">
-          <div className="space-y-2">
+      <div className="flex flex-col md:flex-row">
+        <div className="w-full md:w-56 bg-gray-900 border-b-2 md:border-b-0 md:border-r-2 border-red-500 md:min-h-screen p-4">
+          <div className="flex flex-col space-y-2">
             {SIDEBAR_TABS.map(tab => (
               <button
                 key={tab.id}
@@ -178,7 +178,7 @@ const AdminPanel = () => {
           </div>
         </div>
 
-        <div className="flex-1 p-6">
+        <div className="flex-1 p-4 md:p-6 overflow-auto">
           {activeTab === 'dashboard' && <DashboardTab stats={stats} />}
           {activeTab === 'neue-runde' && (
             <NewRoundTab
